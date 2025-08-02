@@ -1,74 +1,30 @@
 package me.kall.entitychunkdata.data;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
-import net.minecraftforge.event.entity.EntityTravelToDimensionEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class EntitiesInChunkData {
     public static final Map<ResourceLocation, Map<ChunkPos, Set<UUID>>> ENTITIES = new ConcurrentHashMap<>();
-    private static boolean registered = false;
-
-    public static @NotNull Iterator<Entity> getEntitiesInChunk(@NotNull ServerLevel level, ChunkPos pos) {
-        Set<UUID> entitySet = new ObjectOpenHashSet<>(ENTITIES.getOrDefault(level.dimension().location(), Collections.emptyMap()).getOrDefault(pos, Collections.emptySet()));
-
-        Iterator<UUID> backingIterator = entitySet.iterator();
-
-        return new Iterator<>() {
-            private Entity nextValid = null;
-            private boolean hasNextEvaluated = false;
-
-            private void findNextValid() {
-                while (backingIterator.hasNext()) {
-                    UUID candidateId = backingIterator.next();
-                    Entity candidate = level.getEntity(candidateId);
-                    if (candidate != null) {
-                        nextValid = candidate;
-                        return;
-                    } else {
-                        backingIterator.remove();
-                    }
-                }
-                nextValid = null;
-            }
-
-            @Override
-            public boolean hasNext() {
-                if (!hasNextEvaluated) {
-                    findNextValid();
-                    hasNextEvaluated = true;
-                }
-                return nextValid != null;
-            }
-
-            @Override
-            public Entity next() {
-                if (!hasNext()) throw new NoSuchElementException();
-                hasNextEvaluated = false;
-                return nextValid;
-            }
-        };
-    }
+    public static final Queue<Runnable> TASKS = new ConcurrentLinkedQueue<>();
 
     @ApiStatus.Internal
     public static @NotNull Map<ChunkPos, Set<UUID>> map() {
@@ -90,14 +46,16 @@ public class EntitiesInChunkData {
 
         Set<UUID> entitySet = entitiesInChunk.get(chunkPos);
         if (entitySet == null) return;
-        entitySet.remove(entity.getUUID());
 
-        if (!entitySet.isEmpty()) return;
+        TASKS.add(() -> {
+            entitySet.remove(entity.getUUID());
 
-        entitiesInChunk.remove(chunkPos);
-        if (!entitiesInChunk.isEmpty()) return;
+            if (!entitySet.isEmpty()) return;
 
-        ENTITIES.remove(dim);
+            entitiesInChunk.remove(chunkPos);
+            if (!entitiesInChunk.isEmpty()) return;
+            ENTITIES.remove(dim);
+        });
     }
 
     @ApiStatus.Internal
@@ -105,25 +63,19 @@ public class EntitiesInChunkData {
         if (level.isLoaded(entity.blockPosition()) && entity.isAlive()) {
             ChunkPos pos = entity.chunkPosition();
             ResourceLocation dim = level.dimension().location();
-            ENTITIES
+            TASKS.add(() -> ENTITIES
                     .computeIfAbsent(dim, key -> map())
                     .computeIfAbsent(pos, key -> set())
-                    .add(entity.getUUID());
+                    .add(entity.getUUID()));
         }
     }
 
     public static void register() {
-        if (registered) return;
-        registered = true;
         IEventBus bus = MinecraftForge.EVENT_BUS;
         bus.addListener(EntitiesInChunkData::onChunkUnLoad);
         bus.addListener(EntitiesInChunkData::onLevelUnLoad);
         bus.addListener(EventPriority.LOWEST, EntitiesInChunkData::onJoin);
         bus.addListener(EventPriority.LOWEST, EntitiesInChunkData::onLeave);
-        bus.addListener(EventPriority.LOWEST, EntitiesInChunkData::onDie);
-        bus.addListener(EventPriority.LOWEST, EntitiesInChunkData::onTravel);
-        bus.addListener(EventPriority.LOWEST, EntitiesInChunkData::onDespawn);
-        bus.addListener(EntitiesInChunkData::onShutdown);
     }
 
     private static void onChunkUnLoad(ChunkEvent.@NotNull Unload event) {
@@ -150,30 +102,5 @@ public class EntitiesInChunkData {
         if (!event.isCanceled() && event.getEntity().level() instanceof ServerLevel level) {
             removeEntity(event.getEntity(), level);
         }
-    }
-
-    private static void onDie(@NotNull LivingDeathEvent event) {
-        if (event.isCanceled()) return;
-        LivingEntity entity = event.getEntity();
-        if (entity.level() instanceof ServerLevel level) {
-            removeEntity(entity, level);
-        }
-    }
-
-    private static void onTravel(@NotNull EntityTravelToDimensionEvent event) {
-        if (!event.isCanceled() && event.getEntity().level() instanceof ServerLevel level) {
-            removeEntity(event.getEntity(), level);
-        }
-    }
-
-    private static void onDespawn(MobSpawnEvent.@NotNull AllowDespawn event) {
-        if (event.getResult().equals(Event.Result.DENY)) return;
-        if (event.getEntity().level() instanceof ServerLevel level) {
-            removeEntity(event.getEntity(), level);
-        }
-    }
-
-    private static void onShutdown(ServerStoppingEvent event) {
-        ENTITIES.clear();
     }
 }

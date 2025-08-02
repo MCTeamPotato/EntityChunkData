@@ -9,7 +9,8 @@
   "client": [
   ],
   "mixins": [
-    "EntityMixin"
+    "EntityMixin",
+    "ServerLevelMixin"
   ],
   "injectors": {
     "defaultRequire": 1
