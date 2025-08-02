@@ -5,13 +5,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.level.ChunkEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -71,7 +71,7 @@ public class EntitiesInChunkData {
     }
 
     public static void register() {
-        IEventBus bus = MinecraftForge.EVENT_BUS;
+        IEventBus bus = NeoForge.EVENT_BUS;
         bus.addListener(EntitiesInChunkData::onChunkUnLoad);
         bus.addListener(EntitiesInChunkData::onLevelUnLoad);
         bus.addListener(EventPriority.LOWEST, EntitiesInChunkData::onJoin);
@@ -99,7 +99,7 @@ public class EntitiesInChunkData {
     }
 
     private static void onLeave(@NotNull EntityLeaveLevelEvent event) {
-        if (!event.isCanceled() && event.getEntity().level() instanceof ServerLevel level) {
+        if (event.getEntity().level() instanceof ServerLevel level) {
             removeEntity(event.getEntity(), level);
         }
     }
