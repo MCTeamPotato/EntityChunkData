@@ -11,11 +11,11 @@ import java.util.function.BooleanSupplier;
 
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelMixin {
-    @Inject(method = "tick", at = @At("RETURN"))
+    @Inject(method = "tick", at = @At("TAIL"))
     private void onTickEnd(BooleanSupplier hasTimeLeft, CallbackInfo ci) {
-        synchronized (EntitiesInChunkData.TASKS) {
-            EntitiesInChunkData.TASKS.forEach(Runnable::run);
-            EntitiesInChunkData.TASKS.clear();
+        Runnable task;
+        while ((task = EntitiesInChunkData.TASKS.poll()) != null) {
+            task.run();
         }
     }
 }
