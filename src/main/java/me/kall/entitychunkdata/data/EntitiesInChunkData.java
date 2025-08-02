@@ -93,13 +93,13 @@ public class EntitiesInChunkData {
     }
 
     private static void onJoin(@NotNull EntityJoinLevelEvent event) {
-        if (!event.isCanceled() && event.getEntity().level() instanceof ServerLevel level) {
+        if (!event.isCanceled() && event.getEntity().level instanceof ServerLevel level) {
             addEntity(level, event.getEntity());
         }
     }
 
     private static void onLeave(@NotNull EntityLeaveLevelEvent event) {
-        if (!event.isCanceled() && event.getEntity().level() instanceof ServerLevel level) {
+        if (!event.isCanceled() && event.getEntity().level instanceof ServerLevel level) {
             removeEntity(event.getEntity(), level);
         }
     }

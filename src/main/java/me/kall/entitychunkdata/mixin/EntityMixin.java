@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @Mixin(Entity.class)
 public abstract class EntityMixin {
-    @Shadow private Level level;
+    @Shadow public Level level;
     @Shadow public abstract void setUUID(UUID uniqueId);
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;setPos(DDD)V"))
@@ -31,7 +31,7 @@ public abstract class EntityMixin {
     @Inject(method = "setPosRaw", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/ChunkPos;<init>(Lnet/minecraft/core/BlockPos;)V"))
     private void chunkPosUpdatePre(double x, double y, double z, CallbackInfo ci) {
         Entity self = (Entity) (Object) this;
-        if (self.level() instanceof ServerLevel serverLevel) {
+        if (self.level instanceof ServerLevel serverLevel) {
             EntitiesInChunkData.removeEntity(self, serverLevel);
         }
     }
@@ -39,7 +39,7 @@ public abstract class EntityMixin {
     @Inject(method = "setPosRaw", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/ChunkPos;<init>(Lnet/minecraft/core/BlockPos;)V", shift = At.Shift.AFTER))
     private void chunkPosUpdatePost(double x, double y, double z, CallbackInfo ci) {
         Entity self = (Entity) (Object) this;
-        if (self.level() instanceof ServerLevel serverLevel) {
+        if (self.level instanceof ServerLevel serverLevel) {
             EntitiesInChunkData.addEntity(serverLevel, self);
         }
     }
