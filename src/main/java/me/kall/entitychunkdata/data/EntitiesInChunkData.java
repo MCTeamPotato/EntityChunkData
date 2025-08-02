@@ -38,7 +38,7 @@ public class EntitiesInChunkData {
 
     @ApiStatus.Internal
     public static void removeEntity(@NotNull Entity entity, @NotNull ServerLevel level) {
-        ChunkPos chunkPos = entity.chunkPosition();
+        ChunkPos chunkPos = new ChunkPos(entity.blockPosition());
         ResourceLocation dim = level.dimension().location();
 
         Map<ChunkPos, Set<UUID>> entitiesInChunk = ENTITIES.get(dim);
@@ -61,7 +61,7 @@ public class EntitiesInChunkData {
     @ApiStatus.Internal
     public static void addEntity(@NotNull ServerLevel level, @NotNull Entity entity) {
         if (level.isLoaded(entity.blockPosition()) && entity.isAlive()) {
-            ChunkPos pos = entity.chunkPosition();
+            ChunkPos pos = new ChunkPos(entity.blockPosition());
             ResourceLocation dim = level.dimension().location();
             TASKS.add(() -> ENTITIES
                     .computeIfAbsent(dim, key -> map())
@@ -79,28 +79,28 @@ public class EntitiesInChunkData {
     }
 
     private static void onChunkUnLoad(ChunkEvent.@NotNull Unload event) {
-        if (event.getWorld() instanceof ServerLevel level && event.getChunk() instanceof LevelChunk chunk) {
-            Map<ChunkPos, Set<UUID>> entitiesInChunk = ENTITIES.get(level.dimension().location());
+        if (event.getWorld() instanceof ServerLevel && event.getChunk() instanceof LevelChunk) {
+            Map<ChunkPos, Set<UUID>> entitiesInChunk = ENTITIES.get(((ServerLevel)event.getWorld()).dimension().location());
             if (entitiesInChunk == null) return;
-            entitiesInChunk.remove(chunk.getPos());
+            entitiesInChunk.remove(event.getChunk().getPos());
         }
     }
 
     private static void onLevelUnLoad(WorldEvent.@NotNull Unload event) {
-        if (event.getWorld() instanceof ServerLevel level) {
-            ENTITIES.remove(level.dimension().location());
+        if (event.getWorld() instanceof ServerLevel) {
+            ENTITIES.remove(((ServerLevel)event.getWorld()).dimension().location());
         }
     }
 
     private static void onJoin(@NotNull EntityJoinWorldEvent event) {
-        if (!event.isCanceled() && event.getEntity().level instanceof ServerLevel level) {
-            addEntity(level, event.getEntity());
+        if (!event.isCanceled() && event.getWorld() instanceof ServerLevel) {
+            addEntity((ServerLevel) event.getWorld(), event.getEntity());
         }
     }
 
     private static void onLeave(@NotNull EntityLeaveWorldEvent event) {
-        if (event.getEntity().level instanceof ServerLevel level) {
-            removeEntity(event.getEntity(), level);
+        if (event.getWorld() instanceof ServerLevel) {
+            removeEntity(event.getEntity(), (ServerLevel) event.getWorld());
         }
     }
 }
