@@ -3,7 +3,6 @@ package me.kall.entitychunkdata.mixin;
 import me.kall.entitychunkdata.data.EntitiesInChunkData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,16 +17,15 @@ import java.util.UUID;
 @Mixin(Entity.class)
 public abstract class EntityMixin {
     @Shadow private Level level;
+    @Shadow public abstract void setUUID(UUID uniqueId);
 
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Mth;createInsecureUUID(Lnet/minecraft/util/RandomSource;)Ljava/util/UUID;"), require = 0)
-    private UUID initId(RandomSource randomSource) {
-        UUID id = Mth.createInsecureUUID(randomSource);
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;setPos(DDD)V"))
+    private void init(Entity instance, double x, double y, double z) {
         if (this.level instanceof ServerLevel serverLevel) {
-            while (serverLevel.getEntity(id) != null) {
-                id = Mth.createInsecureUUID(randomSource);
-            }
+            UUID id = Mth.createInsecureUUID(this.level.getRandom());
+            while (serverLevel.getEntity(id) != null) id = Mth.createInsecureUUID(this.level.getRandom());
+            this.setUUID(id);
         }
-        return id;
     }
 
     @Inject(method = "setPosRaw", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/ChunkPos;<init>(Lnet/minecraft/core/BlockPos;)V"))
