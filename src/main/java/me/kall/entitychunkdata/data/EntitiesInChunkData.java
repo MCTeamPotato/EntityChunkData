@@ -4,7 +4,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
-import me.kall.entitychunkdata.EntityChunkData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -101,7 +100,6 @@ public class EntitiesInChunkData {
         if (!entitiesInChunk.isEmpty()) return;
 
         ENTITIES.remove(dim);
-        EntityChunkData.LOGGER.debug("Removed {} at {} in {}", entity.getName(), entity.position(), dim);
     }
 
     @ApiStatus.Internal
@@ -113,7 +111,6 @@ public class EntitiesInChunkData {
                     .computeIfAbsent(dim, key -> map())
                     .computeIfAbsent(pos, key -> set())
                     .add(entity.getUUID());
-            EntityChunkData.LOGGER.debug("Add {} at {} in {}", entity.getName(), entity.position(), dim);
         }
     }
 
