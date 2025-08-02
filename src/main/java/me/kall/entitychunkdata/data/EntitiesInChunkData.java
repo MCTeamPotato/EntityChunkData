@@ -1,9 +1,6 @@
 package me.kall.entitychunkdata.data;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import it.unimi.dsi.fastutil.objects.ObjectSets;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -26,13 +23,14 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EntitiesInChunkData {
-    public static final Map<ResourceLocation, Map<ChunkPos, Set<UUID>>> ENTITIES = Object2ObjectMaps.synchronize(new Object2ObjectOpenHashMap<>());
+    public static final Map<ResourceLocation, Map<ChunkPos, Set<UUID>>> ENTITIES = new ConcurrentHashMap<>();
     private static boolean registered = false;
 
     public static @NotNull Iterator<Entity> getEntitiesInChunk(@NotNull ServerLevel level, ChunkPos pos) {
-        Set<UUID> entitySet = ENTITIES.getOrDefault(level.dimension().location(), Collections.emptyMap()).getOrDefault(pos, Collections.emptySet());
+        Set<UUID> entitySet = new ObjectOpenHashSet<>(ENTITIES.getOrDefault(level.dimension().location(), Collections.emptyMap()).getOrDefault(pos, Collections.emptySet()));
 
         Iterator<UUID> backingIterator = entitySet.iterator();
 
@@ -74,12 +72,12 @@ public class EntitiesInChunkData {
 
     @ApiStatus.Internal
     public static @NotNull Map<ChunkPos, Set<UUID>> map() {
-        return Object2ObjectMaps.synchronize(new Object2ObjectOpenHashMap<>());
+        return new ConcurrentHashMap<>();
     }
 
     @ApiStatus.Internal
     public static @NotNull Set<UUID> set() {
-        return ObjectSets.synchronize(new ObjectOpenHashSet<>());
+        return ConcurrentHashMap.newKeySet();
     }
 
     @ApiStatus.Internal
