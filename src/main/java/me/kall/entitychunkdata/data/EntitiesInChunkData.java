@@ -6,10 +6,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.event.level.LevelEvent;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.EntityLeaveWorldEvent;
+import net.minecraftforge.event.world.ChunkEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import org.jetbrains.annotations.ApiStatus;
@@ -79,27 +79,27 @@ public class EntitiesInChunkData {
     }
 
     private static void onChunkUnLoad(ChunkEvent.@NotNull Unload event) {
-        if (event.getLevel() instanceof ServerLevel level && event.getChunk() instanceof LevelChunk chunk) {
+        if (event.getWorld() instanceof ServerLevel level && event.getChunk() instanceof LevelChunk chunk) {
             Map<ChunkPos, Set<UUID>> entitiesInChunk = ENTITIES.get(level.dimension().location());
             if (entitiesInChunk == null) return;
             entitiesInChunk.remove(chunk.getPos());
         }
     }
 
-    private static void onLevelUnLoad(LevelEvent.@NotNull Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
+    private static void onLevelUnLoad(WorldEvent.@NotNull Unload event) {
+        if (event.getWorld() instanceof ServerLevel level) {
             ENTITIES.remove(level.dimension().location());
         }
     }
 
-    private static void onJoin(@NotNull EntityJoinLevelEvent event) {
+    private static void onJoin(@NotNull EntityJoinWorldEvent event) {
         if (!event.isCanceled() && event.getEntity().level instanceof ServerLevel level) {
             addEntity(level, event.getEntity());
         }
     }
 
-    private static void onLeave(@NotNull EntityLeaveLevelEvent event) {
-        if (!event.isCanceled() && event.getEntity().level instanceof ServerLevel level) {
+    private static void onLeave(@NotNull EntityLeaveWorldEvent event) {
+        if (event.getEntity().level instanceof ServerLevel level) {
             removeEntity(event.getEntity(), level);
         }
     }
