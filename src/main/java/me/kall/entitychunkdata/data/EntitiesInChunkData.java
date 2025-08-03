@@ -60,14 +60,12 @@ public class EntitiesInChunkData {
 
     @ApiStatus.Internal
     public static void addEntity(@NotNull ServerLevel level, @NotNull Entity entity) {
-        if (level.isLoaded(entity.blockPosition()) && entity.isAlive()) {
-            ChunkPos pos = new ChunkPos(entity.blockPosition());
-            ResourceLocation dim = level.dimension().location();
-            TASKS.add(() -> ENTITIES
-                    .computeIfAbsent(dim, key -> map())
-                    .computeIfAbsent(pos, key -> set())
-                    .add(entity.getUUID()));
-        }
+        ChunkPos pos = new ChunkPos(entity.blockPosition());
+        ResourceLocation dim = level.dimension().location();
+        TASKS.add(() -> ENTITIES
+                .computeIfAbsent(dim, key -> map())
+                .computeIfAbsent(pos, key -> set())
+                .add(entity.getUUID()));
     }
 
     public static void register() {
@@ -82,13 +80,13 @@ public class EntitiesInChunkData {
         if (event.getWorld() instanceof ServerLevel && event.getChunk() instanceof LevelChunk) {
             Map<ChunkPos, Set<UUID>> entitiesInChunk = ENTITIES.get(((ServerLevel)event.getWorld()).dimension().location());
             if (entitiesInChunk == null) return;
-            entitiesInChunk.remove(event.getChunk().getPos());
+            TASKS.add(() -> entitiesInChunk.remove(event.getChunk().getPos()));
         }
     }
 
     private static void onLevelUnLoad(WorldEvent.@NotNull Unload event) {
         if (event.getWorld() instanceof ServerLevel) {
-            ENTITIES.remove(((ServerLevel)event.getWorld()).dimension().location());
+            TASKS.add(() -> ENTITIES.remove(((ServerLevel)event.getWorld()).dimension().location()));
         }
     }
 
