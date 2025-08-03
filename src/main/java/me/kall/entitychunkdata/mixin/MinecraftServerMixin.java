@@ -18,14 +18,4 @@ public abstract class MinecraftServerMixin {
             task.run();
         }
     }
-
-    @Inject(method = "updateChunkPos", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/LevelChunk;removeEntity(Lnet/minecraft/world/entity/Entity;I)V"))
-    private void onRemove(Entity entity, CallbackInfo ci) {
-        EntitiesInChunkData.removeEntity(entity, (ServerLevel) (Object) this);
-    }
-
-    @Inject(method = "updateChunkPos", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/LevelChunk;addEntity(Lnet/minecraft/world/entity/Entity;)V"))
-    private void onAdd(Entity entity, CallbackInfo ci) {
-        EntitiesInChunkData.addEntity((ServerLevel) (Object) this, entity);
-    }
 }

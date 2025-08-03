@@ -18,7 +18,7 @@ public abstract class EntityMixin {
     @Shadow public abstract void setUUID(UUID uniqueId);
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;setPos(DDD)V"))
-    private void init(Entity instance, double x, double y, double z) {
+    private void init(@NotNull Entity instance, double x, double y, double z) {
         instance.setPos(x, y, z);
         if (this.level instanceof ServerLevel) {
             ServerLevel serverLevel = (ServerLevel) this.level;
