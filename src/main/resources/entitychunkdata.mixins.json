@@ -10,7 +10,7 @@
   ],
   "mixins": [
     "EntityMixin",
-    "ServerLevelMixin"
+    "MinecraftServerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

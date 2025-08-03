@@ -5,6 +5,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,7 +21,8 @@ public abstract class EntityMixin {
     @Shadow public abstract void setUUID(UUID uniqueId);
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;setPos(DDD)V"))
-    private void init(Entity instance, double x, double y, double z) {
+    private void init(@NotNull Entity instance, double x, double y, double z) {
+        instance.setPos(x, y, z);
         if (this.level instanceof ServerLevel serverLevel) {
             UUID id = Mth.createInsecureUUID(this.level.getRandom());
             while (serverLevel.getEntity(id) != null) id = Mth.createInsecureUUID(this.level.getRandom());
