@@ -19,12 +19,11 @@ public abstract class EntityMixin {
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;setPos(DDD)V"))
     private void init(@NotNull Entity instance, double x, double y, double z) {
-        instance.setPos(x, y, z);
         if (this.level instanceof ServerLevel) {
-            ServerLevel serverLevel = (ServerLevel) this.level;
             UUID id = Mth.createInsecureUUID(this.level.getRandom());
-            while (serverLevel.getEntity(id) != null) id = Mth.createInsecureUUID(this.level.getRandom());
+            while (((ServerLevel)this.level).getEntity(id) != null) id = Mth.createInsecureUUID(this.level.getRandom());
             this.setUUID(id);
         }
+        instance.setPos(x, y, z);
     }
 }
